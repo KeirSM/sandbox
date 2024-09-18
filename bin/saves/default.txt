@@ -7,7 +7,7 @@ minDistance 0.9
 drawDepth 1
 drawColor 0
 octaves 5
-seed 0
+seed 4
 seedSize 9
 persistance 0.5
 drawGrid 0
@@ -18,7 +18,7 @@ holeFill 1
 warpPoints 249 111 1092 104 259 561 1092 551 
 applyHeightAdjustment 0
 planarPoints 150 0 75 150 0 75 
-projectionPoints 7 61 1866 92 0 1078 1870 1078 
+projectionPoints 16 94 1866 92 0 1078 1870 1078 
 drawLines 0
 selectedShaderIndex 0
 drawContours 1
