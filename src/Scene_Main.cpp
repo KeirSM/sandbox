@@ -1,5 +1,4 @@
 #include "Scene_Main.h"
-#include "Scene_Menu.h"
 #include "GameEngine.h"
 #include "Assets.h"
 #include "Profiler.hpp"
@@ -7,6 +6,7 @@
 #include "Processor_Colorizer.h"
 #include "Processor_Minecraft.h"
 #include "Processor_Pathfinding.h"
+#include "Processor_Heat.h"
 #include "Source_Camera.h"
 #include "Source_Perlin.h"
 #include "Source_Snapshot.h"
@@ -34,15 +34,22 @@ void Scene_Main::init()
     ImGui::GetStyle().ScaleAllSizes(2.0f);
     ImGui::GetIO().FontGlobalScale = 2.0f;
 
+    registerSource<Source_Camera>("Camera");
+    registerSource<Source_Perlin>("Perlin");
+    registerSource<Source_Snapshot>("Snapshot");
+
+    registerProcessor<Processor_Colorizer>("Colorizer");
+    registerProcessor<Processor_Minecraft>("Minecraft");
+    registerProcessor<Processor_Heat>("Heat");
+    m_processorMap.emplace("None", []() {return nullptr; });
+
     load();
-    m_source->init();
-    m_processor->init();
 }
 
 void Scene_Main::onFrame()
 {
     m_topography = m_source->getTopography();
-    if (m_topography.rows > 0 && m_topography.cols > 0)
+    if (m_processor && m_topography.rows > 0 && m_topography.cols > 0)
     {
         m_processor->processTopography(m_topography);
     }
@@ -120,8 +127,8 @@ void Scene_Main::sUserInput()
             m_mouseWorld = m_game->window().mapPixelToCoords(m_mouseScreen);
         }
 
-        m_source->processEvent(event, m_mouseWorld);
-        if (!displayOpen)
+        if (m_source) { m_source->processEvent(event, m_mouseWorld); }
+        if (m_processor && !displayOpen)
         {
             m_processor->processEvent(event, m_mouseWorld);
         }
@@ -134,7 +141,7 @@ void Scene_Main::sUserInput()
         {
             sProcessEvent(displayEvent);
 
-            m_processor->processEvent(displayEvent, m_mouseDisplay);
+            if (m_processor) { m_processor->processEvent(displayEvent, m_mouseDisplay); }
 
             // happens whenever the mouse is being moved
             if (displayEvent.type == sf::Event::MouseMoved)
@@ -153,7 +160,8 @@ void Scene_Main::sRender()
     m_game->window().clear();
     m_game->displayWindow().clear();
 
-    m_source->render(m_game->window());
+    if (m_source) { m_source->render(m_game->window()); }
+    if (!m_processor) { return; }
     if (m_game->displayWindow().isOpen())
     {
         m_processor->render(m_game->displayWindow());
@@ -178,39 +186,52 @@ void Scene_Main::renderUI()
     ImGui::Text("Framerate: %d", (int)m_game->framerate());
     ImGui::EndMainMenuBar();
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", &m_drawUI);
     ImGui::BeginTabBar("ControlTabs");
 
     // Source
 
-    if (ImGui::BeginTabItem("Source", &m_drawUI))
+    if (ImGui::BeginTabItem("Source"))
     {
-        const char* sources[] = { "Camera", "Perlin", "Snapshot" };
-        if (ImGui::Combo("Selected Source", &m_sourceID, sources, IM_ARRAYSIZE(sources)))
+        if (ImGui::BeginCombo("Selected Source", m_sourceID.c_str()))
         {
-            setSource(m_sourceID);
+            for (auto & [name, _] : m_sourceMap)
+            {
+                bool selected = name == m_sourceID;
+                if (ImGui::Selectable(name.c_str(), &selected))
+                {
+                    setSource(name);
+                }
+            }
+            ImGui::EndCombo();
         }
 
         ImGui::Separator();
-
-        m_source->imgui();
-
+      
+        if (m_source) { m_source->imgui(); }
+      
         ImGui::EndTabItem();
     }
 
     // Processor
 
-    if (ImGui::BeginTabItem("Processor", &m_drawUI))
+    if (ImGui::BeginTabItem("Processor"))
     {
-        const char* processors[] = { "Colorizer", "Minecraft", "Pathfinding"};
-        if (ImGui::Combo("Selected Processor", &m_processorID, processors, IM_ARRAYSIZE(processors)))
+        if (ImGui::BeginCombo("Selected Processor", m_processorID.c_str()))
         {
-            setProcessor(m_processorID);
+            for (auto & [name, _] : m_processorMap)
+            {
+                bool selected = name == m_processorID;
+                if (ImGui::Selectable(name.c_str(), &selected))
+                {
+                    setProcessor(name);
+                }
+            }
+            ImGui::EndCombo();
         }
-
         ImGui::Separator();
 
-        m_processor->imgui();
+        if (m_processor) { m_processor->imgui(); }
 
         ImGui::EndTabItem();
     }
@@ -226,8 +247,11 @@ void Scene_Main::save()
     current << m_saveFile << '\n';
     current.close();
 
-    m_source->save(m_save);
-    m_processor->save(m_save);
+    if (m_source) { m_source->save(m_save); }
+    if (m_processor) { m_processor->save(m_save); }
+
+    m_save.source = m_sourceID;
+    m_save.processor = m_processorID;
 
     m_save.saveToFile("saves/" + m_saveFile);
 }
@@ -252,34 +276,42 @@ void Scene_Main::load()
     setProcessor(m_save.processor);
 }
 
-void Scene_Main::setSource(int source)
+void Scene_Main::setSource(const std::string & source)
 {
     if (m_source) { m_source->save(m_save); }
     m_sourceID = source;
-    switch (source)
+    if (m_sourceMap.contains(source))
     {
-    case TopographySource::Camera: { m_source = std::make_shared<Source_Camera>(); } break;
-    case TopographySource::Perlin: { m_source = std::make_shared<Source_Perlin>(); } break;
-    case TopographySource::Snapshot: { m_source = std::make_shared<Source_Snapshot>(); } break;
+        m_source = m_sourceMap.at(source)();
     }
-
-    m_source->init();
-    m_source->load(m_save);
+    else
+    {
+        m_source = m_sourceMap.at("Camera")();
+    }
+    if (m_source) 
+    {
+        m_source->init();
+        m_source->load(m_save);
+    }
 }
 
-void Scene_Main::setProcessor(int processor)
+void Scene_Main::setProcessor(const std::string & processor)
 {
     if (m_processor) { m_processor->save(m_save); }
     m_processorID = processor;
-    switch (processor)
+    if (m_processorMap.contains(processor))
     {
-    case TopographyProcessor::Colorizer: { m_processor = std::make_shared<Processor_Colorizer>(); } break;
-    case TopographyProcessor::Minecraft: { m_processor = std::make_shared<Processor_Minecraft>(); } break;
-    case TopographyProcessor::Pathfinding: { m_processor = std::make_shared<Processor_Pathfinding>(); } break;
+        m_processor = m_processorMap.at(processor)();
     }
-
-    m_processor->init();
-    m_processor->load(m_save);
+    else
+    {
+        m_processor = m_processorMap.at("Colorizer")();
+    }
+    if (m_processor) 
+    {
+        m_processor->init();
+        m_processor->load(m_save);
+    }
 }
 
 void Scene_Main::saveDataDump()
@@ -292,7 +324,7 @@ void Scene_Main::saveDataDump()
 
 void Scene_Main::endScene()
 {
-    m_game->changeScene<Scene_Menu>("Menu");
     m_game->displayWindow().close();
     save();
+    m_game->quit();
 }
