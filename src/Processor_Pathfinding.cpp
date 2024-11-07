@@ -26,5 +26,4 @@ void Processor_Pathfinding::load(const Save & save)
 
 void Processor_Pathfinding::processTopography(const cv::Mat & data)
 {
-
 }

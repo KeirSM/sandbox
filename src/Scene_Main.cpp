@@ -41,6 +41,7 @@ void Scene_Main::init()
     registerProcessor<Processor_Colorizer>("Colorizer");
     registerProcessor<Processor_Minecraft>("Minecraft");
     registerProcessor<Processor_Heat>("Heat");
+    registerProcessor<Processor_Pathfinding>("Pathfinding");
     m_processorMap.emplace("None", []() {return nullptr; });
 
     load();

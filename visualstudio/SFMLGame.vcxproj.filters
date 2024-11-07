@@ -65,9 +65,6 @@
     <ClCompile Include="..\src\Processor_Minecraft.cpp">
       <Filter>processors\minecraft</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\Processor_Socket.cpp">
-      <Filter>processors\socket</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\SandboxProjector.cpp">
       <Filter>calibration</Filter>
     </ClCompile>
@@ -75,7 +72,7 @@
       <Filter>calibration</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Processor_Pathfinding.cpp">
-      <Filter>topography processors</Filter>
+      <Filter>processors\pathfinding</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,9 +118,6 @@
     <ClInclude Include="..\src\Save.hpp">
       <Filter>engine</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\Processor_Pathfinding.h">
-      <Filter>topography processors</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\TopographyProcessor.h">
       <Filter>processors</Filter>
     </ClInclude>
@@ -148,9 +142,6 @@
     <ClInclude Include="..\src\Processor_Minecraft.h">
       <Filter>processors\minecraft</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\Processor_Socket.h">
-      <Filter>processors\socket</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\Profiler.hpp">
       <Filter>engine</Filter>
     </ClInclude>
@@ -174,6 +165,9 @@
     </ClInclude>
     <ClInclude Include="..\src\Perlin.hpp">
       <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Processor_Pathfinding.h">
+      <Filter>processors\pathfinding</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -217,6 +211,9 @@
     </Filter>
     <Filter Include="calibration">
       <UniqueIdentifier>{8274e842-7bd1-4020-b79c-6007d282d44f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="processors\pathfinding">
+      <UniqueIdentifier>{f00d22b8-147c-4158-b364-276998ae5911}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
